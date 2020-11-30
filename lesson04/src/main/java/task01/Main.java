@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 public class Main {
     public static void main(String[] args) {
-        Person[] persons = new Person[10_000];
+        Person[] persons = new Person[100];
         for (int i = 0; i < persons.length; i++) {
             persons[i] = Person.gerRandomInstance();
         }
@@ -42,6 +42,6 @@ public class Main {
 //        }
 
         //Search for duplicates
-        DuplicatesSearcher.search(persons);
+        //DuplicatesSearcher.search(persons);
     }
 }

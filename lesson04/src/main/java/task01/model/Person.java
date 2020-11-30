@@ -53,7 +53,34 @@ public class Person implements Comparable<Person> {
 
     @Override
     public String toString() {
-        return sex + ", " + age + ", " + name;
+        char spaceChar = '_';
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("Sex:");
+        int space = sex.isMale() ? 4 : 2;
+        while (space > 0) {
+            sb.append(spaceChar);
+            space--;
+        }
+        sb.append(sex);
+
+        sb.append(" | Age:");
+        space = ((age / 10) >= 1) ? 4 : 5;
+        while (space > 0) {
+            sb.append(spaceChar);
+            space--;
+        }
+        sb.append(age);
+
+        sb.append(" | Name:");
+        space = 12 - name.length();
+        while (space > 0) {
+            sb.append(spaceChar);
+            space--;
+        }
+        sb.append(name);
+
+        return sb.toString();
     }
 
     @Override
