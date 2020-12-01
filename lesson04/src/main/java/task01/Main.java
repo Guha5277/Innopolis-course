@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 public class Main {
     public static void main(String[] args) {
-        Person[] persons = new Person[100];
+        Person[] persons = new Person[10000];
         for (int i = 0; i < persons.length; i++) {
             persons[i] = Person.gerRandomInstance();
         }
@@ -23,9 +23,9 @@ public class Main {
         long startTime = System.currentTimeMillis();
         Comparable[] sortedList = new Comparable[persons.length];
         System.arraycopy(persons, 0, sortedList, 0, persons.length);
-        Arrays.sort(persons);
+        Arrays.sort(sortedList);
         System.out.println("--------Integrated Sort--------");
-        System.out.println("Array length: " + persons.length);
+        System.out.println("Array length: " + sortedList.length);
         long time = System.currentTimeMillis() - startTime;
         System.out.println("Time: " + time + "ms");
         System.out.println("------------------------------\n");
@@ -37,7 +37,7 @@ public class Main {
         Comparable[] sortedList3 = sorter.sort(persons);
 
         //Print array to console after sort
-//        for (Person p : persons) {
+//        for (Person p : sortedList) {
 //            System.out.println(p);
 //        }
 
