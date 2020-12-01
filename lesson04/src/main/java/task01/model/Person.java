@@ -29,9 +29,12 @@ public class Person implements Comparable<Person> {
     }
 
     public static Person gerRandomInstance() {
+        //uses Random to generate age field with range 0-99
         Random random = new Random();
         int age = random.nextInt(99);
+        //generating random sex
         Sex sex = random.nextBoolean() ? Sex.MAN : Sex.WOMAN;
+        //generating a random name from an array of names
         String name = (sex == Sex.MAN) ? ArraysOfNames.getRandomMaleName() : ArraysOfNames.getRandomFemaleName();
 
         return new Person(age, sex, name);
@@ -45,6 +48,7 @@ public class Person implements Comparable<Person> {
         result = sex.compareTo(person.getSex());
         if (result != 0) return result;
 
+        //compare two int values (x, y). Returns: 0 (if x==y); -1 (if x < y) and 1 (if x > y).
         result = Integer.compare(person.getAge(), age);
         if (result != 0) return result;
 
