@@ -31,8 +31,8 @@ public class Person implements Comparable<Person> {
     public static Person gerRandomInstance() {
         Random random = new Random();
         int age = random.nextInt(99);
-        Sex sex = new Sex(random.nextBoolean() ? Sex.MAN : Sex.WOMAN);
-        String name = sex.isMale() ? ArraysOfNames.getRandomMaleName() : ArraysOfNames.getRandomFemaleName();
+        Sex sex = random.nextBoolean() ? Sex.MAN : Sex.WOMAN;
+        String name = (sex == Sex.MAN) ? ArraysOfNames.getRandomMaleName() : ArraysOfNames.getRandomFemaleName();
 
         return new Person(age, sex, name);
     }
@@ -57,7 +57,7 @@ public class Person implements Comparable<Person> {
         StringBuilder sb = new StringBuilder();
 
         sb.append("Sex:");
-        int space = sex.isMale() ? 4 : 2;
+        int space = (sex == Sex.MAN) ? 4 : 2;
         while (space > 0) {
             sb.append(spaceChar);
             space--;
