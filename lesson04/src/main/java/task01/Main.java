@@ -37,7 +37,7 @@ public class Main {
         Comparable[] sortedList3 = sorter.sort(persons);
 
         //Print array to console after sort
-//        for (Person p : sortedList) {
+//        for (Comparable p : sortedList) {
 //            System.out.println(p);
 //        }
 
