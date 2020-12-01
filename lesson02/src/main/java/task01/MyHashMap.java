@@ -4,52 +4,68 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-public class MyHashMap<K, V> implements Map {
+public class MyHashMap<K, V> implements Map<K, V> {
+    @Override
     public int size() {
         return 0;
     }
 
+    @Override
     public boolean isEmpty() {
         return false;
     }
 
+    @Override
     public boolean containsKey(Object key) {
         return false;
     }
 
+    @Override
     public boolean containsValue(Object value) {
         return false;
     }
 
-    public Object get(Object key) {
+    @Override
+    public V get(Object key) {
         return null;
     }
 
-    public Object put(Object key, Object value) {
+    @Override
+    public V put(K key, V value) {
         return null;
     }
 
-    public Object remove(Object key) {
+    @Override
+    public V remove(Object key) {
         return null;
     }
 
-    public void putAll(Map m) {
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
 
     }
 
+    @Override
     public void clear() {
 
     }
 
-    public Set keySet() {
+    @Override
+    public Set<K> keySet() {
         return null;
     }
 
-    public Collection values() {
+    @Override
+    public Collection<V> values() {
         return null;
     }
 
-    public Set<Entry> entrySet() {
+    @Override
+    public Set<Entry<K, V>> entrySet() {
         return null;
+    }
+
+    class Node<K, V> {
+        private Node<K, V> nextNode;
     }
 }
