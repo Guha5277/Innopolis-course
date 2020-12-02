@@ -31,10 +31,22 @@ public class MyHashMap<K, V> implements Map<K, V> {
         if (table[index] == null) return false;
 
         Node<K, V> node = table[index];
-        do {
-            if (node.getKey().equals(key)) return true;
+        while (node != null) {
+
+            K currentKey = node.getKey();
+
+            if (currentKey == null && key == null) {
+                return true;
+            } else if (currentKey == null || key == null) {
+                node = node.getNextNode();
+                continue;
+            }
+            if (node.getKey().equals(key)) {
+                return true;
+            }
+
             node = node.getNextNode();
-        } while (node != null);
+        }
         return false;
     }
 
@@ -42,10 +54,19 @@ public class MyHashMap<K, V> implements Map<K, V> {
     public boolean containsValue(Object value) {
         for (Node<K, V> node : table) {
             if (node != null) {
-                do {
-                    if (node.getValue().equals(value)) return true;
+                while (node != null) {
+                    V currentValue = node.getValue();
+                    if (currentValue == null && value == null) {
+                        return true;
+                    } else if (currentValue == null || value == null) {
+                        node = node.getNextNode();
+                        continue;
+                    }
+                    if (currentValue.equals(value)) {
+                        return true;
+                    }
                     node = node.getNextNode();
-                } while (node != null);
+                }
             }
         }
         return false;
@@ -57,13 +78,21 @@ public class MyHashMap<K, V> implements Map<K, V> {
         if (table[index] == null) return null;
 
         Node<K, V> node = table[index];
-        do {
-            K oldKey = node.getKey();
-            if (oldKey.hashCode() == key.hashCode()
-                    && oldKey.equals(key)) return node.getValue();
-            if (node.getNextNode() == null) break;
+        while (node != null) {
+            K currentKey = node.getKey();
+
+            if (currentKey == null && key == null) {
+                return node.getValue();
+            } else if (currentKey == null || key == null) {
+                node = node.getNextNode();
+                continue;
+            }
+            if ((currentKey.hashCode() == key.hashCode()) && currentKey.equals(key)) {
+                return node.getValue();
+            }
+
             node = node.getNextNode();
-        } while (true);
+        }
         return null;
     }
 
@@ -76,8 +105,20 @@ public class MyHashMap<K, V> implements Map<K, V> {
         if (oldNode == null) {
             table[index] = newNode;
         } else {
-            do {
+            while (oldNode != null) {
                 K oldKey = oldNode.getKey();
+                if (oldKey == null && key == null) {
+                    V oldValue = oldNode.getValue();
+                    oldNode.setValue(value);
+                    return oldValue;
+                } else if (oldKey == null || key == null) {
+                    if (oldNode.getNextNode() == null) {
+                        oldNode.setNextNode(newNode);
+                        break;
+                    }
+                    oldNode = oldNode.getNextNode();
+                    continue;
+                }
                 if (oldKey.hashCode() == key.hashCode()
                         && oldKey.equals(key)) {
                     V oldValue = oldNode.getValue();
@@ -89,10 +130,18 @@ public class MyHashMap<K, V> implements Map<K, V> {
                     break;
                 }
                 oldNode = oldNode.getNextNode();
-
-            } while (true);
+            }
         }
         return null;
+    }
+
+    private V replaceNode(int index, Node<K, V> prevNode, Node<K, V> currentNode) {
+        if (prevNode == null) {
+            table[index] = currentNode.getNextNode();
+        } else {
+            prevNode.setNextNode(currentNode.getNextNode());
+        }
+        return currentNode.getValue();
     }
 
     @Override
@@ -103,20 +152,21 @@ public class MyHashMap<K, V> implements Map<K, V> {
         Node<K, V> currentNode = table[index];
         Node<K, V> prevNode = null;
 
-        do {
-            K oldKey = currentNode.getKey();
-            if (oldKey.hashCode() == key.hashCode()
-                    && oldKey.equals(key)) {
-                if (prevNode == null) table[index] = currentNode.getNextNode();
-                else {
-                    prevNode.setNextNode(currentNode.getNextNode());
-                }
-                return currentNode.getValue();
+        while (currentNode != null) {
+            K currentKey = currentNode.getKey();
+            if (currentKey == null && key == null) {
+                return replaceNode(index, prevNode, currentNode);
+            } else if (currentKey == null || key == null) {
+                prevNode = currentNode;
+                currentNode = currentNode.getNextNode();
+                continue;
+            }
+            if (currentKey.hashCode() == key.hashCode() && currentKey.equals(key)) {
+                return replaceNode(index, prevNode, currentNode);
             }
             prevNode = currentNode;
             currentNode = currentNode.getNextNode();
-        } while (currentNode != null);
-
+        }
         return null;
     }
 
@@ -182,7 +232,7 @@ public class MyHashMap<K, V> implements Map<K, V> {
     }
 
     private int hash(Object key) {
-        return (key.hashCode() & (CAPACITY - 1));
+        return (key == null) ? 0 : (key.hashCode() & (CAPACITY - 1));
     }
 
     private class Node<K, V> {

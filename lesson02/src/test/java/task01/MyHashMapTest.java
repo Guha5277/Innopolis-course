@@ -33,6 +33,58 @@ class MyHashMapTest {
     }
 
     @Test
+    void nullKeyTest(){
+        map.put(key1, val1);
+        map.put(null, val2);
+        map.put(key3, val3);
+        map.put(null, val4);
+
+        Object result1 = map.get(key1);
+        Object result2 = map.get(key3);
+        Object result3 = map.get(null);
+
+        assertEquals(val1, result1);
+        assertEquals(val3, result2);
+        assertEquals(val4, result3);
+    }
+
+    @Test
+    void nullKeyTestWithGeneratedItems(){
+        Random random = new Random();
+        List<String> keyWords = new ArrayList<>();
+
+        map.put(null, val1);
+        map.put(key1, null);
+
+        for (int i = 0; i < 100; i++) {
+            byte[] bytes = new byte[20];
+            random.nextBytes(bytes);
+
+            String keyWord = Arrays.toString(bytes);
+            keyWords.add(keyWord);
+
+            map.put(keyWord, new Object());
+        }
+
+        assertTrue(map.containsKey(null));
+        assertTrue(map.containsValue(null));
+        assertEquals(val1, map.get(null));
+
+        for (String s : keyWords){
+            map.remove(s);
+        }
+        map.remove(null);
+        map.remove(key1);
+
+        for (int i = 0; i < 100; i++) {
+            map.put(keyWords.get(0), new Object());
+        }
+
+        assertFalse(map.containsKey(null));
+        assertFalse(map.containsValue(null));
+    }
+
+    @Test
     void oneElementSizeTest() {
         map.put("Key", new Object());
         int size = map.size();
