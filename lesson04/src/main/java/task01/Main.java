@@ -41,7 +41,7 @@ public class Main {
 //            System.out.println(p);
 //        }
 
-        //Search for duplicates
-        //DuplicatesSearcher.search(persons);
+//        Search for duplicates
+        DuplicatesSearcher.search(persons);
     }
 }
