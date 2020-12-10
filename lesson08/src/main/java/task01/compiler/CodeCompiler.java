@@ -1,5 +1,7 @@
 package task01.compiler;
 
+import task01.model.Worker;
+
 import javax.tools.*;
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -27,10 +29,8 @@ public class CodeCompiler {
         Class<?> aClass = loadClass(bytecodeDest);
         Constructor<?> constructor = aClass.getConstructors()[0];
         try {
-            Object obj = constructor.newInstance();
-            Method[] declaredMethods = aClass.getDeclaredMethods();
-            System.out.println("Starting doWork() method: ");
-            declaredMethods[0].invoke(obj);
+            Worker worker = (Worker)constructor.newInstance();
+            worker.doWork();
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
