@@ -15,7 +15,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import task01.core.GameField;
 import task01.core.GameListener;
 import task01.core.TheLifeGame;
@@ -46,6 +48,8 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private GameField previewGameField;
     private ResizableCanvas gameCanvas;
     private File lastOpenedDirectory;
+    private Stage calculateStage;
+    private ProgressBar calculateProgressBar;
 
     private VBox scrollContainer;
     private Map<Integer, BenchmarkItem> benchmarkItemMap = new HashMap<>();
@@ -176,6 +180,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     public void onGenChanged(GameField gameField, int currentGen) {
         Platform.runLater(() -> {
             if (currentMode == Mode.GAME) {
+                calculateProgressBar.setProgress((double) currentGen / currentTotalGens);
                 gameCanvas.addToQueue(gameField);
             } else {
                 currentTimeLabel.setText("Поколение: " + currentGen);
@@ -193,11 +198,12 @@ public class App extends Application implements GameListener, CanvasEventsListen
     public void gameFinished(GameField gameField) {
         Platform.runLater(() -> {
             if (currentMode == Mode.GAME) {
+                calculateStage.close();
                 previewGameField = gameField;
                 gameCanvas.addToQueue(gameField);
                 gameCanvas.startPainting();
             } else {
-                if (currentItem.getFieldFirstEnd() == null){
+                if (currentItem.getFieldFirstEnd() == null) {
                     currentItem.setFieldFirstEnd(gameField);
                 } else {
                     currentItem.setFieldSecondEnd(gameField);
@@ -211,7 +217,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     public void gameFinishedTime(GameField gameField, Long time) {
         Platform.runLater(() -> {
             Duration duration = Duration.of(time, ChronoUnit.MILLIS);
-            if (currentMode == Mode.GAME){
+            if (currentMode == Mode.GAME) {
                 lblInfo.setText("Игра окончена! Прожито поколений: " + gameField.getGen() + ". Затраченное время: "
                         + time + " || " + duration.toMinutes() + " минут(а), "
                         + duration.getSeconds() + " секунд");
@@ -306,6 +312,9 @@ public class App extends Application implements GameListener, CanvasEventsListen
 
     @FXML
     private void onClickBtnStart(ActionEvent event) {
+        if (mainStage == null) {
+            mainStage = (Stage) ((Control) event.getSource()).getScene().getWindow();
+        }
         if (isGameRunning) {
             return;
         }
@@ -518,7 +527,11 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 gameField = previewGameField;
             }
             gameCanvas.setFrameTime(frameTime);
-            game.pastGensWithTimeRecording(gameField, gens, threads);
+            currentTotalGens = gens;
+            new Thread(() -> {
+                game.pastGensWithTimeRecording(gameField, gens, threads);
+            }).start();
+            showCalculateProgressWindow();
         } catch (NumberFormatException e) {
             showNumberFormatErrorDialog(e);
             isGameRunning = false;
@@ -782,9 +795,9 @@ public class App extends Application implements GameListener, CanvasEventsListen
         return new ToolBar(indexNumber, fieldFirstInfo, firstResultLabel, firstProgressBar, fieldSecondInfo, secondResultLabel, secondProgressBar, btnDelete);
     }
 
-    private void searchAndRunNextGame(){
+    private void searchAndRunNextGame() {
         GameField secondEnd = currentItem.getFieldSecondEnd();
-        if (secondEnd == null){
+        if (secondEnd == null) {
             new Thread(() -> {
                 game.pastGensWithTimeRecording(currentItem.getFieldSecondStart(), currentItem.getGensSecond(), currentItem.getThreadsSecond());
             }).start();
@@ -845,6 +858,25 @@ public class App extends Application implements GameListener, CanvasEventsListen
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Text Files", "*.txt"));
         return fileChooser.showOpenDialog(mainStage);
+    }
+
+    private void showCalculateProgressWindow() {
+        calculateProgressBar = new ProgressBar(0d);
+        AnchorPane.setBottomAnchor(calculateProgressBar, 0d);
+        AnchorPane.setLeftAnchor(calculateProgressBar, 0d);
+        AnchorPane.setTopAnchor(calculateProgressBar, 0d);
+        AnchorPane.setRightAnchor(calculateProgressBar, 0d);
+        Parent root = new AnchorPane(calculateProgressBar);
+        Scene scene = new Scene(root);
+        calculateStage = new Stage(StageStyle.UNDECORATED);
+        calculateStage.setScene(scene);
+        calculateStage.setWidth(250d);
+        calculateStage.setHeight(40);
+        calculateStage.initModality(Modality.WINDOW_MODAL);
+        calculateStage.initOwner(mainStage);
+        calculateStage.setX(mainStage.getX() + mainStage.getWidth() / 2 - 125);
+        calculateStage.setY(mainStage.getY() + mainStage.getHeight() / 2 - 20);
+        calculateStage.show();
     }
 
     private void showFileNotSelectedErrorDialog() {
