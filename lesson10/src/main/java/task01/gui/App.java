@@ -153,7 +153,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
     @FXML
     private CheckBox checkLoadFileFirstBench;
 
-
     public static void main(String[] args) {
         launch(args);
     }
@@ -179,6 +178,271 @@ public class App extends Application implements GameListener, CanvasEventsListen
         scrollBox = new VBox();
         benchScrollPane.setContent(scrollBox);
         currentMode = Mode.GAME;
+    }
+
+    //Game Events
+    @Override
+    public void onGameStarted(int threadsCount) {
+        Platform.runLater(() -> {
+            if (currentMode == Mode.GAME) {
+                isGameRunning = true;
+                lockUIComponents();
+            } else {
+                currentItem = benchmarkItemMap.get(currentBenchItemIndex);
+                //first from node
+                benchGameStarted(currentItem.getFieldFirstEnd() == null);
+            }
+        });
+    }
+
+    @Override
+    public void onGenChanged(GameField gameField, int currentGen) {
+        Platform.runLater(() -> {
+            if (currentMode == Mode.GAME) {
+                gameCanvas.addToQueue(gameField);
+            } else {
+                currentTimeLabel.setText("Поколение: " + currentGen);
+                currentBenchProgressBar.setProgress((double) currentGen / currentTotalGens);
+            }
+        });
+    }
+
+    @Override
+    public void fieldStateChanged(boolean state, int x, int y) {
+
+    }
+
+    @Override
+    public void gameFinished(GameField gameField) {
+        Platform.runLater(() -> {
+            if (currentMode == Mode.GAME) {
+                previewGameField = gameField;
+                gameCanvas.addToQueue(gameField);
+                gameCanvas.startPainting();
+            } else {
+                if (currentItem.getFieldFirstEnd() == null){
+                    currentItem.setFieldFirstEnd(gameField);
+                } else {
+                    currentItem.setFieldSecondEnd(gameField);
+                }
+                //TODO добавить обновление currentBenchItem - поля времени, итогового игрового поля и т.д.
+                //TODO добавить верификацию результатов
+            }
+        });
+    }
+
+    @Override
+    public void gameFinishedTime(GameField gameField, Long time) {
+        Platform.runLater(() -> {
+            Duration duration = Duration.of(time, ChronoUnit.MILLIS);
+            if (currentMode == Mode.GAME){
+                lblInfo.setText("Игра окончена! Прожито поколений: " + gameField.getGen() + ". Затраченное время: "
+                        + time + " || " + duration.toMinutes() + " минут(а), "
+                        + duration.getSeconds() + " секунд");
+            } else {
+                currentTimeLabel.setText(time > 1000 ? duration.getSeconds() + " сек" : time + " мс");
+                currentBenchProgressBar.setDisable(true);
+                searchAndRunNextGame();
+            }
+        });
+    }
+
+    @Override
+    public void successfulLoadFromFile(File file, GameField gameField) {
+        lblInfo.setText("Успешно загружено из файла: " + file);
+        fieldX.setText(String.valueOf(gameField.getX()));
+        fieldY.setText(String.valueOf(gameField.getY()));
+        fieldFillPercentage.setText(String.valueOf(gameField.getFillPercentage()));
+        previewGameField = gameField;
+        gameCanvas.preview(gameField);
+    }
+
+    @Override
+    public void failedToReadFile(File file, IOException e) {
+        makeDialogWindow(Alert.AlertType.ERROR,
+                "Ошибка чтения файла!",
+                String.valueOf(e.getCause()),
+                e.getMessage()).showAndWait();
+    }
+
+    @Override
+    public void wrongFileFormat(File file, RuntimeException e) {
+        makeDialogWindow(Alert.AlertType.ERROR,
+                "Неверный формат файла!",
+                String.valueOf(e.getCause()),
+                e.getMessage()).showAndWait();
+    }
+
+    @Override
+    public void successfulSaveToFile(GameField gameField, File file) {
+        lblInfo.setText("Успешно сохранено в файл! " + file);
+    }
+
+    @Override
+    public void failedToSaveToFile(GameField gameField, File file, IOException e) {
+        makeDialogWindow(Alert.AlertType.ERROR,
+                "Ошибка записи файла!",
+                String.valueOf(e.getCause()),
+                e.getMessage()).showAndWait();
+    }
+
+    @Override
+    public void onGameException(Throwable e) {
+        makeDialogWindow(Alert.AlertType.ERROR,
+                "Ошибка!",
+                String.valueOf(e.getCause()),
+                e.getMessage()).showAndWait();
+    }
+
+    //Canvas event
+    @Override
+    public void onAnimationEnd() {
+        if (isGameRunning) {
+            isGameRunning = false;
+            unlockUIComponents();
+        }
+    }
+
+    //Events UI listeners
+    @FXML
+    private void onClickBtnPreview(ActionEvent event) {
+        makeGamePreview(true);
+        btnSaveToFile.setDisable(false);
+    }
+
+    @FXML
+    private void onClickBtnSaveToFile(ActionEvent event) {
+        File fileToSave = selectFileToSave();
+        if (fileToSave != null) {
+            lifeGame.saveToFile(previewGameField, fileToSave);
+            lastOpenedDirectory = fileToSave.getParentFile();
+        }
+    }
+
+    @FXML
+    private void onClickBtnLoadFromFile() {
+        File fileToLoad = selectFileToLoad();
+        if (fileToLoad != null) {
+            lifeGame.loadFromFile(fileToLoad);
+            lastOpenedDirectory = fileToLoad.getParentFile();
+        }
+    }
+
+    @FXML
+    private void onClickBtnStart(ActionEvent event) {
+        if (isGameRunning) {
+            return;
+        }
+        isGameRunning = true;
+        if (gameCanvas == null) {
+            initSingleGameCanvas();
+        }
+//        singleThreadGameCanvas.hide();
+        startGame();
+    }
+
+    @FXML
+    private void onClickBtnStop(ActionEvent event) {
+        if (isGameRunning) {
+            gameCanvas.stopAnimation();
+            unlockUIComponents();
+            isGameRunning = false;
+        }
+    }
+
+    @FXML
+    private void onClickFirstLoadFromFileBench(ActionEvent event) {
+        File file = selectFileToLoad();
+        if (file != null) {
+            benchFirstGameField = lifeGame.loadFromFile(file);
+            if (benchFirstGameField == null) {
+                btnFirstLoadFromFileBench.setText("Файл");
+                return;
+            }
+            btnFirstLoadFromFileBench.setText(file.getName());
+            int x = benchFirstGameField.getX();
+            int y = benchFirstGameField.getY();
+            int fill = benchFirstGameField.getFillPercentage();
+
+            fieldFirstXBench.setText(String.valueOf(x));
+            fieldFirstYBench.setText(String.valueOf(y));
+            fieldFirstFillBench.setText(String.valueOf(fill));
+
+            if (checkSecondSameFieldsBench.isSelected()) {
+                duplicateFieldsBenchValues();
+            }
+        }
+    }
+
+    @FXML
+    private void onClickSecondLoadFromFileBench(ActionEvent event) {
+        File file = selectFileToLoad();
+        if (file != null) {
+            benchSecondGameField = lifeGame.loadFromFile(file);
+            if (benchSecondGameField == null) {
+                btnSecondLoadFromFileBench.setText("Файл");
+                return;
+            }
+            btnSecondLoadFromFileBench.setText(file.getName());
+            int x = benchSecondGameField.getX();
+            int y = benchSecondGameField.getY();
+            int fill = benchSecondGameField.getFillPercentage();
+
+            fieldFirstXBench.setText(String.valueOf(x));
+            fieldFirstYBench.setText(String.valueOf(y));
+            fieldFirstFillBench.setText(String.valueOf(fill));
+        }
+    }
+
+    @FXML
+    private void onCheckedSameFieldsBench(ActionEvent event) {
+        boolean controlCheckBoxState = checkSecondSameFieldsBench.isSelected();
+        if (controlCheckBoxState) {
+            setSecondBenchUIElementsState(controlCheckBoxState);
+            fieldSecondGensBench.setDisable(true);
+            btnSecondLoadFromFileBench.setDisable(true);
+        } else {
+            if (!checkLoadFileSecondBench.isSelected()) {
+                setSecondBenchUIElementsState(controlCheckBoxState);
+            } else {
+                checkLoadFileSecondBench.setDisable(false);
+                btnSecondLoadFromFileBench.setDisable(false);
+            }
+            fieldSecondGensBench.setDisable(false);
+        }
+
+    }
+
+    @FXML
+    private void onClickAddToBench(ActionEvent event) {
+        ToolBar resultBar;
+        if (checkSecondSameFieldsBench.isSelected()) {
+            resultBar = sameGameFieldsBenchBar();
+        } else {
+            resultBar = gameFieldsBenchBar();
+        }
+        if (resultBar != null) {
+            scrollBox.getChildren().add(resultBar);
+        }
+        if (!benchmarkItemMap.isEmpty()) {
+            btnStartBench.setDisable(false);
+        }
+    }
+
+    @FXML
+    private void onClickBtnStartBench(ActionEvent event) {
+        BenchmarkItem firstItem = benchmarkItemMap.get(currentBenchItemIndex);
+        new Thread(() -> {
+            lifeGame.pastGensWithTimeRecording(firstItem.getFieldFirstStart(), firstItem.getGensFirs(), firstItem.getThreadsFirst());
+        }).start();
+
+        //TODO лок UI компонентов
+        //lifeGame.pastGensWithTimeRecording()
+    }
+
+    @FXML
+    private void onClickBtnStopBench(ActionEvent event) {
+
     }
 
     private void initTabs() {
@@ -256,13 +520,30 @@ public class App extends Application implements GameListener, CanvasEventsListen
         });
     }
 
-    private void duplicateFieldsBenchValues() {
-        fieldSecondXBench.setText(fieldFirstXBench.getText());
-        fieldSecondYBench.setText(fieldFirstYBench.getText());
-        fieldSecondGensBench.setText(fieldFirstGensBench.getText());
-        fieldSecondFillBench.setText(fieldFirstFillBench.getText());
-        checkLoadFileSecondBench.setSelected(checkLoadFileFirstBench.isSelected());
-        btnSecondLoadFromFileBench.setText(btnFirstLoadFromFileBench.getText());
+    private void startGame() {
+        GameField gameField;
+        try {
+            int gens = Integer.parseInt(fieldGens.getText());
+            int threads = Integer.parseInt(fieldThreads.getText());
+            int frameTime = Integer.parseInt(fieldFrameTime.getText());
+            if (previewGameField == null || previewGameField.isEmpty()) {
+                int x = Integer.parseInt(fieldX.getText());
+                int y = Integer.parseInt(fieldY.getText());
+                int fill = Integer.parseInt(fieldFillPercentage.getText());
+                if (fill > 100) {
+                    fill = 100;
+                }
+                gameField = lifeGame.newInstance(x, y);
+                lifeGame.fillRandom(gameField, fill);
+            } else {
+                gameField = previewGameField;
+            }
+            gameCanvas.setFrameTime(frameTime);
+            lifeGame.pastGensWithTimeRecording(gameField, gens, threads);
+        } catch (NumberFormatException e) {
+            showNumberFormatErrorDialog(e);
+            isGameRunning = false;
+        }
     }
 
     private void makeGamePreview(boolean fillField) {
@@ -300,6 +581,44 @@ public class App extends Application implements GameListener, CanvasEventsListen
         }
     }
 
+    private void lockUIComponents() {
+        tabSeparatorView.setDisable(true);
+        tabBenchmark.setDisable(true);
+        fieldX.setDisable(true);
+        fieldY.setDisable(true);
+        fieldGens.setDisable(true);
+        fieldFillPercentage.setDisable(true);
+        btnPreview.setDisable(true);
+        fieldFrameTime.setDisable(true);
+        fieldThreads.setDisable(true);
+        btnStart.setDisable(true);
+        btnStop.setDisable(false);
+        btnSaveToFile.setDisable(true);
+        btnLoadFromFIle.setDisable(true);
+        lblInfo.setText("Игра заупускается...");
+    }
+
+    private void unlockUIComponents() {
+        tabSeparatorView.setDisable(false);
+        tabBenchmark.setDisable(false);
+        fieldX.setDisable(false);
+        fieldY.setDisable(false);
+        fieldGens.setDisable(false);
+        fieldFillPercentage.setDisable(false);
+        btnPreview.setDisable(false);
+        btnLoadFromFIle.setDisable(false);
+        btnSaveToFile.setDisable(false);
+        fieldFrameTime.setDisable(false);
+        fieldThreads.setDisable(false);
+        btnStart.setDisable(false);
+        btnStop.setDisable(true);
+    }
+
+    private void initGameInstance() {
+        lifeGame = new TheLifeGame();
+        lifeGame.getGameEventsPublisher().subscribeListener(this);
+    }
+
     private void initSingleGameCanvas() {
         gameCanvas = new ResizableCanvas(this);
         pane.getChildren().add(gameCanvas);
@@ -310,121 +629,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
 
         int index = pane.getChildren().indexOf(lblInfo);
         pane.getChildren().get(index).toFront();
-    }
-
-    private void initGameInstance() {
-        lifeGame = new TheLifeGame();
-        lifeGame.getGameEventsPublisher().subscribeListener(this);
-    }
-
-    //Events UI listeners
-    @FXML
-    void onClickBtnStart(ActionEvent event) {
-        if (isGameRunning) {
-            return;
-        }
-        isGameRunning = true;
-        if (gameCanvas == null) {
-            initSingleGameCanvas();
-        }
-//        singleThreadGameCanvas.hide();
-        startGame();
-    }
-
-    @FXML
-    void onClickBtnStop(ActionEvent event) {
-        if (isGameRunning) {
-            gameCanvas.stopAnimation();
-            unlockUIComponents();
-            isGameRunning = false;
-        }
-    }
-
-    @FXML
-    void onClickBtnPreview(ActionEvent event) {
-        makeGamePreview(true);
-        btnSaveToFile.setDisable(false);
-    }
-
-    @FXML
-    private void onClickBtnSaveToFile(ActionEvent event) {
-        File fileToSave = selectFileToSave();
-        if (fileToSave != null) {
-            lifeGame.saveToFile(previewGameField, fileToSave);
-            lastOpenedDirectory = fileToSave.getParentFile();
-        }
-    }
-
-    @FXML
-    private void onClickBtnLoadFromFile() {
-        File fileToLoad = selectFileToLoad();
-        if (fileToLoad != null) {
-            lifeGame.loadFromFile(fileToLoad);
-            lastOpenedDirectory = fileToLoad.getParentFile();
-        }
-    }
-
-    @FXML
-    void onClickFirstLoadFromFileBench(ActionEvent event) {
-        File file = selectFileToLoad();
-        if (file != null) {
-            benchFirstGameField = lifeGame.loadFromFile(file);
-            if (benchFirstGameField == null) {
-                btnFirstLoadFromFileBench.setText("Файл");
-                return;
-            }
-            btnFirstLoadFromFileBench.setText(file.getName());
-            int x = benchFirstGameField.getX();
-            int y = benchFirstGameField.getY();
-            int fill = benchFirstGameField.getFillPercentage();
-
-            fieldFirstXBench.setText(String.valueOf(x));
-            fieldFirstYBench.setText(String.valueOf(y));
-            fieldFirstFillBench.setText(String.valueOf(fill));
-
-            if (checkSecondSameFieldsBench.isSelected()) {
-                duplicateFieldsBenchValues();
-            }
-        }
-    }
-
-    @FXML
-    void onClickSecondLoadFromFileBench(ActionEvent event) {
-        File file = selectFileToLoad();
-        if (file != null) {
-            benchSecondGameField = lifeGame.loadFromFile(file);
-            if (benchSecondGameField == null) {
-                btnSecondLoadFromFileBench.setText("Файл");
-                return;
-            }
-            btnSecondLoadFromFileBench.setText(file.getName());
-            int x = benchSecondGameField.getX();
-            int y = benchSecondGameField.getY();
-            int fill = benchSecondGameField.getFillPercentage();
-
-            fieldFirstXBench.setText(String.valueOf(x));
-            fieldFirstYBench.setText(String.valueOf(y));
-            fieldFirstFillBench.setText(String.valueOf(fill));
-        }
-    }
-
-    @FXML
-    void onCheckedSameFieldsBench(ActionEvent event) {
-        boolean controlCheckBoxState = checkSecondSameFieldsBench.isSelected();
-        if (controlCheckBoxState) {
-            setSecondBenchUIElementsState(controlCheckBoxState);
-            fieldSecondGensBench.setDisable(true);
-            btnSecondLoadFromFileBench.setDisable(true);
-        } else {
-            if (!checkLoadFileSecondBench.isSelected()) {
-                setSecondBenchUIElementsState(controlCheckBoxState);
-            } else {
-                checkLoadFileSecondBench.setDisable(false);
-                btnSecondLoadFromFileBench.setDisable(false);
-            }
-            fieldSecondGensBench.setDisable(false);
-        }
-
     }
 
     private void setFirstBenchUIElementsState(boolean state) {
@@ -446,39 +650,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
         fieldSecondXBench.setDisable(state);
         fieldSecondYBench.setDisable(state);
         fieldSecondFillBench.setDisable(state);
-    }
-
-    @FXML
-    void onClickBtnStartBench(ActionEvent event) {
-//        currentBenchItemIndex = 1;
-        BenchmarkItem firstItem = benchmarkItemMap.get(currentBenchItemIndex);
-        new Thread(() -> {
-            lifeGame.pastGensWithTimeRecording(firstItem.getFieldFirstStart(), firstItem.getGensFirs(), firstItem.getThreadsFirst());
-        }).start();
-
-        //TODO лок UI компонентов
-        //lifeGame.pastGensWithTimeRecording()
-    }
-
-    @FXML
-    void onClickBtnStopBench(ActionEvent event) {
-
-    }
-
-    @FXML
-    void onClickAddToBench(ActionEvent event) {
-        ToolBar resultBar;
-        if (checkSecondSameFieldsBench.isSelected()) {
-            resultBar = sameGameFieldsBenchBar();
-        } else {
-            resultBar = gameFieldsBenchBar();
-        }
-        if (resultBar != null) {
-            scrollBox.getChildren().add(resultBar);
-        }
-        if (!benchmarkItemMap.isEmpty()) {
-            btnStartBench.setDisable(false);
-        }
     }
 
     private ToolBar gameFieldsBenchBar() {
@@ -634,85 +805,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
         return new ToolBar(indexNumber, fieldFirstInfo, firstResultLabel, firstProgressBar, fieldSecondInfo, secondResultLabel, secondProgressBar, btnDelete);
     }
 
-    //Game Events
-    @Override
-    public void onGameStarted(int threadsCount) {
-        Platform.runLater(() -> {
-            if (currentMode == Mode.GAME) {
-                isGameRunning = true;
-                lockUIComponents();
-            } else {
-                currentItem = benchmarkItemMap.get(currentBenchItemIndex);
-                //first from node
-                benchGameStarted(currentItem.getFieldFirstEnd() == null);
-            }
-        });
-    }
-
-    private void benchGameStarted(boolean isFirst) {
-        int indexShift = isFirst ? 0 : 3;
-        currentTotalGens = isFirst ? currentItem.getGensFirs() : currentItem.getGensSecond();
-        ToolBar toolBar = (ToolBar) scrollBox.getChildren().get(currentBenchItemIndex - 1);
-        currentBenchProgressBar = (ProgressBar) toolBar.getItems().get(BENCH_FIRST_PROGRESSBAR + indexShift);
-        currentTimeLabel = (Label) toolBar.getItems().get(BENCH_FIRST_RESULT + indexShift);
-        currentBenchProgressBar.setVisible(true);
-        currentTimeLabel.setVisible(true);
-        currentTimeLabel.setText("");
-    }
-
-    @Override
-    public void onGenChanged(GameField gameField, int currentGen) {
-        Platform.runLater(() -> {
-            if (currentMode == Mode.GAME) {
-                gameCanvas.addToQueue(gameField);
-            } else {
-                currentTimeLabel.setText("Поколение: " + currentGen);
-                currentBenchProgressBar.setProgress((double) currentGen / currentTotalGens);
-            }
-        });
-    }
-
-    @Override
-    public void fieldStateChanged(boolean state, int x, int y) {
-
-    }
-
-    @Override
-    public void gameFinished(GameField gameField) {
-        Platform.runLater(() -> {
-            if (currentMode == Mode.GAME) {
-                previewGameField = gameField;
-                gameCanvas.addToQueue(gameField);
-                gameCanvas.startPainting();
-            } else {
-                if (currentItem.getFieldFirstEnd() == null){
-                    currentItem.setFieldFirstEnd(gameField);
-                } else {
-                    currentItem.setFieldSecondEnd(gameField);
-                }
-                //TODO добавить обновление currentBenchItem - поля времени, итогового игрового поля и т.д.
-                //TODO добавить верификацию результатов
-            }
-        });
-    }
-
-
-    @Override
-    public void gameFinishedTime(GameField gameField, Long time) {
-        Platform.runLater(() -> {
-            Duration duration = Duration.of(time, ChronoUnit.MILLIS);
-            if (currentMode == Mode.GAME){
-                lblInfo.setText("Игра окончена! Прожито поколений: " + gameField.getGen() + ". Затраченное время: "
-                        + time + " || " + duration.toMinutes() + " минут(а), "
-                        + duration.getSeconds() + " секунд");
-            } else {
-                currentTimeLabel.setText(time > 1000 ? duration.getSeconds() + " сек" : time + " мс");
-                currentBenchProgressBar.setDisable(true);
-                searchAndRunNextGame();
-            }
-        });
-    }
-
     private void searchAndRunNextGame(){
         GameField secondEnd = currentItem.getFieldSecondEnd();
         if (secondEnd == null){
@@ -735,119 +827,24 @@ public class App extends Application implements GameListener, CanvasEventsListen
         }
     }
 
-    @Override
-    public void successfulLoadFromFile(File file, GameField gameField) {
-        lblInfo.setText("Успешно загружено из файла: " + file);
-        fieldX.setText(String.valueOf(gameField.getX()));
-        fieldY.setText(String.valueOf(gameField.getY()));
-        fieldFillPercentage.setText(String.valueOf(gameField.getFillPercentage()));
-        previewGameField = gameField;
-        gameCanvas.preview(gameField);
+    private void benchGameStarted(boolean isFirst) {
+        int indexShift = isFirst ? 0 : 3;
+        currentTotalGens = isFirst ? currentItem.getGensFirs() : currentItem.getGensSecond();
+        ToolBar toolBar = (ToolBar) scrollBox.getChildren().get(currentBenchItemIndex - 1);
+        currentBenchProgressBar = (ProgressBar) toolBar.getItems().get(BENCH_FIRST_PROGRESSBAR + indexShift);
+        currentTimeLabel = (Label) toolBar.getItems().get(BENCH_FIRST_RESULT + indexShift);
+        currentBenchProgressBar.setVisible(true);
+        currentTimeLabel.setVisible(true);
+        currentTimeLabel.setText("");
     }
 
-    @Override
-    public void failedToReadFile(File file, IOException e) {
-        makeDialogWindow(Alert.AlertType.ERROR,
-                "Ошибка чтения файла!",
-                String.valueOf(e.getCause()),
-                e.getMessage()).showAndWait();
-    }
-
-    @Override
-    public void wrongFileFormat(File file, RuntimeException e) {
-        makeDialogWindow(Alert.AlertType.ERROR,
-                "Неверный формат файла!",
-                String.valueOf(e.getCause()),
-                e.getMessage()).showAndWait();
-    }
-
-    @Override
-    public void successfulSaveToFile(GameField gameField, File file) {
-        lblInfo.setText("Успешно сохранено в файл! " + file);
-    }
-
-    @Override
-    public void failedToSaveToFile(GameField gameField, File file, IOException e) {
-        makeDialogWindow(Alert.AlertType.ERROR,
-                "Ошибка записи файла!",
-                String.valueOf(e.getCause()),
-                e.getMessage()).showAndWait();
-    }
-
-    @Override
-    public void onGameException(Throwable e) {
-        makeDialogWindow(Alert.AlertType.ERROR,
-                "Ошибка!",
-                String.valueOf(e.getCause()),
-                e.getMessage()).showAndWait();
-    }
-
-    //Canvas event
-    @Override
-    public void onAnimationEnd() {
-        if (isGameRunning) {
-            isGameRunning = false;
-            unlockUIComponents();
-        }
-    }
-
-    private void startGame() {
-        GameField gameField;
-        try {
-            int gens = Integer.parseInt(fieldGens.getText());
-            int threads = Integer.parseInt(fieldThreads.getText());
-            int frameTime = Integer.parseInt(fieldFrameTime.getText());
-            if (previewGameField == null || previewGameField.isEmpty()) {
-                int x = Integer.parseInt(fieldX.getText());
-                int y = Integer.parseInt(fieldY.getText());
-                int fill = Integer.parseInt(fieldFillPercentage.getText());
-                if (fill > 100) {
-                    fill = 100;
-                }
-                gameField = lifeGame.newInstance(x, y);
-                lifeGame.fillRandom(gameField, fill);
-            } else {
-                gameField = previewGameField;
-            }
-            gameCanvas.setFrameTime(frameTime);
-            lifeGame.pastGensWithTimeRecording(gameField, gens, threads);
-        } catch (NumberFormatException e) {
-            showNumberFormatErrorDialog(e);
-            isGameRunning = false;
-        }
-    }
-
-    private void lockUIComponents() {
-        tabSeparatorView.setDisable(true);
-        tabBenchmark.setDisable(true);
-        fieldX.setDisable(true);
-        fieldY.setDisable(true);
-        fieldGens.setDisable(true);
-        fieldFillPercentage.setDisable(true);
-        btnPreview.setDisable(true);
-        fieldFrameTime.setDisable(true);
-        fieldThreads.setDisable(true);
-        btnStart.setDisable(true);
-        btnStop.setDisable(false);
-        btnSaveToFile.setDisable(true);
-        btnLoadFromFIle.setDisable(true);
-        lblInfo.setText("Игра заупускается...");
-    }
-
-    private void unlockUIComponents() {
-        tabSeparatorView.setDisable(false);
-        tabBenchmark.setDisable(false);
-        fieldX.setDisable(false);
-        fieldY.setDisable(false);
-        fieldGens.setDisable(false);
-        fieldFillPercentage.setDisable(false);
-        btnPreview.setDisable(false);
-        btnLoadFromFIle.setDisable(false);
-        btnSaveToFile.setDisable(false);
-        fieldFrameTime.setDisable(false);
-        fieldThreads.setDisable(false);
-        btnStart.setDisable(false);
-        btnStop.setDisable(true);
+    private void duplicateFieldsBenchValues() {
+        fieldSecondXBench.setText(fieldFirstXBench.getText());
+        fieldSecondYBench.setText(fieldFirstYBench.getText());
+        fieldSecondGensBench.setText(fieldFirstGensBench.getText());
+        fieldSecondFillBench.setText(fieldFirstFillBench.getText());
+        checkLoadFileSecondBench.setSelected(checkLoadFileFirstBench.isSelected());
+        btnSecondLoadFromFileBench.setText(btnFirstLoadFromFileBench.getText());
     }
 
     private File selectFileToSave() {
@@ -873,17 +870,16 @@ public class App extends Application implements GameListener, CanvasEventsListen
         return fileChooser.showOpenDialog(mainStage);
     }
 
-    private void showNumberFormatErrorDialog(Exception e) {
-        makeDialogWindow(Alert.AlertType.ERROR, "Ошибка!",
-                e.getMessage(),
-                "Поля не могут быть пустыми!").showAndWait();
-    }
-
-
     private void showFileNotSelectedErrorDialog() {
         makeDialogWindow(Alert.AlertType.ERROR, "Ошибка!",
                 "Файл не выбран!",
                 "Выберите файл сохранённого состояния игры или уберите галочку с соответствущего поля!").showAndWait();
+    }
+
+    private void showNumberFormatErrorDialog(Exception e) {
+        makeDialogWindow(Alert.AlertType.ERROR, "Ошибка!",
+                e.getMessage(),
+                "Поля не могут быть пустыми!").showAndWait();
     }
 
     private Alert makeDialogWindow(Alert.AlertType type, String title, String header, String context) {
