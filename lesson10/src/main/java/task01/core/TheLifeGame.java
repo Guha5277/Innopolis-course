@@ -96,7 +96,7 @@ public class TheLifeGame implements Game {
     public long pastGensWithTimeRecording(GameField gameField, int gens, int threadsCount) {
         long startTime = System.currentTimeMillis();
         pastGens(gameField, gens, threadsCount);
-        listener.gameFinishedTime(gameField, System.currentTimeMillis() - startTime);
+        listener.gameFinishedTime(gameField.copy(), System.currentTimeMillis() - startTime);
         return startTime;
     }
 
