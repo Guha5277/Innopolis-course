@@ -124,7 +124,7 @@
                         <CheckBox fx:id="checkLoadFileSecondBench" disable="true" mnemonicParsing="false" text="Загрузить из файла" translateX="20.0" />
                         <Button fx:id="btnSecondLoadFromFileBench" disable="true" mnemonicParsing="false" onAction="#onClickSecondLoadFromFileBench" text="Файл" translateX="20.0" />
                         <CheckBox fx:id="checkSecondSameFieldsBench" mnemonicParsing="false" onAction="#onCheckedSameFieldsBench" selected="true" text="Одинаковые поля" translateX="90.0" />
-                        <Button fx:id="btnAddToBench" mnemonicParsing="false" onAction="#onClickAddToBench" text="Добавить" translateX="130.0" />
+                        <Button fx:id="btnAddToBench" defaultButton="true" mnemonicParsing="false" onAction="#onClickAddToBench" text="Добавить" translateX="130.0" />
                      </items>
                   </ToolBar>
                   <ToolBar layoutX="534.0" layoutY="33.0" prefHeight="25.0" prefWidth="120.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="35.0">
