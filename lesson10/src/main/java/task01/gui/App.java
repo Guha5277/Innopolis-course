@@ -4,9 +4,11 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -22,12 +24,15 @@ import task01.core.GameField;
 import task01.core.GameListener;
 import task01.core.TheLifeGame;
 
+import javax.tools.Tool;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 public class App extends Application implements GameListener, CanvasEventsListener {
     private final static int MIN_WIDTH = 550;
@@ -745,7 +750,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
         Label indexNumber = new Label(String.valueOf(benchElementsIndex));
         indexNumber.setFont(Font.font("System", FontWeight.BOLD, 15));
         indexNumber.paddingProperty().setValue(smallPadding);
-        benchElementsIndex++;
 
         StringBuilder sb = new StringBuilder();
         sb.append("Размер: ")
@@ -797,9 +801,48 @@ public class App extends Application implements GameListener, CanvasEventsListen
                         "    -fx-background-insets: 0;" +
                         "    -fx-text-fill: white;");
         btnDelete.setTranslateX(25);
+        btnDelete.setOnAction(event -> removeBenchElement(Integer.parseInt(indexNumber.getText())));
 
+        benchElementsIndex++;
 
         return new ToolBar(indexNumber, fieldFirstInfo, firstResultLabel, firstProgressBar, fieldSecondInfo, secondResultLabel, secondProgressBar, btnDelete);
+    }
+
+    private void removeBenchElement(int elementIndex) {
+        int mapSize = benchmarkItemMap.size();
+        if (mapSize == elementIndex) {
+            benchmarkItemMap.remove(elementIndex);
+            scrollContainer.getChildren().remove(elementIndex - 1);
+        } else {
+            benchmarkItemMap.remove(elementIndex);
+            scrollContainer.getChildren().remove(elementIndex - 1);
+            scrollContainer.getChildren().stream()
+                    .filter(node -> {
+                        Label numberLabel = (Label) ((ToolBar) node).getItems().get(0);
+                        int num = Integer.parseInt(numberLabel.getText());
+                        return num > elementIndex;
+                    }).peek(node -> {
+                Label numberLabel = (Label) ((ToolBar) node).getItems().get(0);
+                int num = Integer.parseInt(numberLabel.getText());
+                numberLabel.setText(String.valueOf(num - 1));
+            }).count();
+            List<BenchmarkItem> wrongNumericBenchItems = benchmarkItemMap.entrySet()
+                    .stream()
+                    .filter(e -> e.getKey() > elementIndex)
+                    .map(integerBenchmarkItemEntry -> integerBenchmarkItemEntry.getValue()).collect(Collectors.toList());
+            int index = elementIndex + 1;
+            for (int i = 0; i < wrongNumericBenchItems.size(); i++) {
+                benchmarkItemMap.remove(index);
+                index++;
+            }
+
+            index = elementIndex;
+            for (BenchmarkItem item : wrongNumericBenchItems) {
+                benchmarkItemMap.put(index, item);
+                index++;
+            }
+        }
+        this.benchElementsIndex = benchmarkItemMap.isEmpty() ? 1 : benchmarkItemMap.size() + 1;
     }
 
     private void searchAndRunNextGame() {
