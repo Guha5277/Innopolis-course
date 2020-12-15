@@ -26,8 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.UnaryOperator;
 
 public class App extends Application implements GameListener, CanvasEventsListener {
@@ -208,7 +207,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 } else {
                     currentItem.setFieldSecondEnd(gameField);
                 }
-                //TODO добавить верификацию результатов
             }
         });
     }
@@ -806,9 +804,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
             currentBenchItemIndex++;
             currentItem = benchmarkItemMap.get(currentBenchItemIndex);
             if (currentItem == null) {
-                makeDialogWindow(Alert.AlertType.INFORMATION, "Тест завершен",
-                        "Тест завершился успешно",
-                        "Всего пар было сравнено: " + (currentBenchItemIndex - 1)).showAndWait();
+                showBenchmarkResultDialog();
             } else {
                 new Thread(() -> {
                     game.pastGensWithTimeRecording(currentItem.getFieldFirstStart(), currentItem.getGensFirs(), currentItem.getThreadsFirst());
@@ -877,6 +873,26 @@ public class App extends Application implements GameListener, CanvasEventsListen
         calculateStage.setX(mainStage.getX() + mainStage.getWidth() / 2 - 125);
         calculateStage.setY(mainStage.getY() + mainStage.getHeight() / 2 - 20);
         calculateStage.show();
+    }
+
+
+    private void showBenchmarkResultDialog() {
+        Collection<BenchmarkItem> items = benchmarkItemMap.values();
+        StringBuilder sb = new StringBuilder();
+
+        int index = 1;
+        for (BenchmarkItem item : items) {
+            GameField firstField = item.getFieldFirstEnd();
+            GameField secondField = item.getFieldSecondEnd();
+
+            sb.append(index++).append(". ")
+                    .append(firstField.getX()).append('x').append(firstField.getY()).append(' ')
+                    .append(secondField.getX()).append('x').append(secondField.getY()).append(" результаты равны: ")
+                    .append(game.isGameFieldsEquals(firstField, secondField)).append('\n');
+        }
+        makeDialogWindow(Alert.AlertType.INFORMATION, "Тест завершен",
+                "Тест завершился успешно",
+                sb.toString()).showAndWait();
     }
 
     private void showFileNotSelectedErrorDialog() {
