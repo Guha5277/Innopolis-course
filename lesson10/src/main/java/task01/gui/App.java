@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.UnaryOperator;
@@ -33,29 +32,25 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private final static int MIN_WIDTH = 550;
     private final static int MIN_HEIGHT = 300;
     private final static String XML_PATH = "/javafxmls/main_view.fxml";
-    private final static int BENCH_LABEL_INDEX = 0;
-    private final static int BENCH_FIRST_INFO = 1;
-    private final static int BENCH_FIRST_RESULT = 2;
-    private final static int BENCH_FIRST_PROGRESSBAR = 3;
-    private final static int BENCH_SECOND_INFO = 4;
-    private final static int BENCH_SECOND_RESULT = 5;
-    private final static int BENCH_SECOND_PROGRESSBAR = 6;
-    private final static int BENCH_BTN_DELETE = 7;
+    private final static int BENCH_FIRST_RESULT_INDEX = 2;
+    private final static int BENCH_FIRST_PROGRESSBAR_INDEX = 3;
 
     private boolean isGameRunning;
     private int benchElementsIndex = 1;
     private int currentBenchItemIndex = 1;
     private int currentTotalGens;
 
+    private Mode currentMode;
     private Stage mainStage;
-    private TheLifeGame lifeGame;
+    private TheLifeGame game;
     private GameField previewGameField;
     private ResizableCanvas gameCanvas;
     private File lastOpenedDirectory;
-    private Mode currentMode;
+
+    private VBox scrollContainer;
+    private Map<Integer, BenchmarkItem> benchmarkItemMap = new HashMap<>();
     private GameField benchFirstGameField;
     private GameField benchSecondGameField;
-    private Map<Integer, BenchmarkItem> benchmarkItemMap = new HashMap<>();
     private BenchmarkItem currentItem;
     private ProgressBar currentBenchProgressBar;
     private Label currentTimeLabel;
@@ -63,8 +58,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
     //Tabs
     @FXML
     private Tab tabGame;
-    @FXML
-    private Tab tabSeparatorView;
     @FXML
     private Tab tabBenchmark;
 
@@ -78,6 +71,8 @@ public class App extends Application implements GameListener, CanvasEventsListen
     @FXML
     private TextField fieldFillPercentage;
     @FXML
+    private Button btnPreview;
+    @FXML
     private TextField fieldGens;
     @FXML
     private TextField fieldThreads;
@@ -88,39 +83,22 @@ public class App extends Application implements GameListener, CanvasEventsListen
     @FXML
     private Button btnStop;
     @FXML
-    private Button btnPreview;
-    @FXML
     private Button btnSaveToFile;
     @FXML
     private Button btnLoadFromFIle;
     @FXML
     private Label lblInfo;
 
-    //Separator Viewer Tab
-    @FXML
-    private TextField fieldXSV;
-    @FXML
-    private TextField fieldYSV;
-    @FXML
-    private TextField fieldPartsSV;
-    @FXML
-    private TextField fieldCellSizeSV;
-    @FXML
-    private Slider sliderCellSizeSV;
-    @FXML
-    private Button btnShowSV;
-
     //Benchmark Tab
     @FXML
     private ScrollPane benchScrollPane;
-    private VBox scrollBox;
     @FXML
     private Button btnAddToBench;
     @FXML
     private Button btnStartBench;
     @FXML
     private Button btnStopBench;
-    //First field
+    //First to compare field
     @FXML
     private TextField fieldFirstXBench;
     @FXML
@@ -133,7 +111,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private TextField fieldFirstThreadsBench;
     @FXML
     private Button btnFirstLoadFromFileBench;
-    //Second Field
+    //Second to compare Field
     @FXML
     private TextField fieldSecondXBench;
     @FXML
@@ -175,8 +153,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
         initGameInstance();
         initFields();
         initCheckBoxes();
-        scrollBox = new VBox();
-        benchScrollPane.setContent(scrollBox);
+        initBenchmarkScrollContainer();
         currentMode = Mode.GAME;
     }
 
@@ -225,7 +202,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 } else {
                     currentItem.setFieldSecondEnd(gameField);
                 }
-                //TODO добавить обновление currentBenchItem - поля времени, итогового игрового поля и т.д.
                 //TODO добавить верификацию результатов
             }
         });
@@ -314,7 +290,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private void onClickBtnSaveToFile(ActionEvent event) {
         File fileToSave = selectFileToSave();
         if (fileToSave != null) {
-            lifeGame.saveToFile(previewGameField, fileToSave);
+            game.saveToFile(previewGameField, fileToSave);
             lastOpenedDirectory = fileToSave.getParentFile();
         }
     }
@@ -323,7 +299,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private void onClickBtnLoadFromFile() {
         File fileToLoad = selectFileToLoad();
         if (fileToLoad != null) {
-            lifeGame.loadFromFile(fileToLoad);
+            game.loadFromFile(fileToLoad);
             lastOpenedDirectory = fileToLoad.getParentFile();
         }
     }
@@ -337,7 +313,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
         if (gameCanvas == null) {
             initSingleGameCanvas();
         }
-//        singleThreadGameCanvas.hide();
         startGame();
     }
 
@@ -354,7 +329,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private void onClickFirstLoadFromFileBench(ActionEvent event) {
         File file = selectFileToLoad();
         if (file != null) {
-            benchFirstGameField = lifeGame.loadFromFile(file);
+            benchFirstGameField = game.loadFromFile(file);
             if (benchFirstGameField == null) {
                 btnFirstLoadFromFileBench.setText("Файл");
                 return;
@@ -378,7 +353,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private void onClickSecondLoadFromFileBench(ActionEvent event) {
         File file = selectFileToLoad();
         if (file != null) {
-            benchSecondGameField = lifeGame.loadFromFile(file);
+            benchSecondGameField = game.loadFromFile(file);
             if (benchSecondGameField == null) {
                 btnSecondLoadFromFileBench.setText("Файл");
                 return;
@@ -422,7 +397,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
             resultBar = gameFieldsBenchBar();
         }
         if (resultBar != null) {
-            scrollBox.getChildren().add(resultBar);
+            scrollContainer.getChildren().add(resultBar);
         }
         if (!benchmarkItemMap.isEmpty()) {
             btnStartBench.setDisable(false);
@@ -433,11 +408,10 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private void onClickBtnStartBench(ActionEvent event) {
         BenchmarkItem firstItem = benchmarkItemMap.get(currentBenchItemIndex);
         new Thread(() -> {
-            lifeGame.pastGensWithTimeRecording(firstItem.getFieldFirstStart(), firstItem.getGensFirs(), firstItem.getThreadsFirst());
+            game.pastGensWithTimeRecording(firstItem.getFieldFirstStart(), firstItem.getGensFirs(), firstItem.getThreadsFirst());
         }).start();
 
         //TODO лок UI компонентов
-        //lifeGame.pastGensWithTimeRecording()
     }
 
     @FXML
@@ -520,6 +494,11 @@ public class App extends Application implements GameListener, CanvasEventsListen
         });
     }
 
+    private void initBenchmarkScrollContainer() {
+        scrollContainer = new VBox();
+        benchScrollPane.setContent(scrollContainer);
+    }
+
     private void startGame() {
         GameField gameField;
         try {
@@ -533,13 +512,13 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 if (fill > 100) {
                     fill = 100;
                 }
-                gameField = lifeGame.newInstance(x, y);
-                lifeGame.fillRandom(gameField, fill);
+                gameField = game.newInstance(x, y);
+                game.fillRandom(gameField, fill);
             } else {
                 gameField = previewGameField;
             }
             gameCanvas.setFrameTime(frameTime);
-            lifeGame.pastGensWithTimeRecording(gameField, gens, threads);
+            game.pastGensWithTimeRecording(gameField, gens, threads);
         } catch (NumberFormatException e) {
             showNumberFormatErrorDialog(e);
             isGameRunning = false;
@@ -571,18 +550,17 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 return;
             }
             int fillPercentage = Integer.parseInt(fillText);
-            GameField gameField = lifeGame.newInstance(x, y);
-            lifeGame.fillRandom(gameField, fillPercentage);
+            GameField gameField = game.newInstance(x, y);
+            game.fillRandom(gameField, fillPercentage);
             previewGameField = gameField;
             gameCanvas.preview(gameField);
         } else {
             previewGameField = null;
-            gameCanvas.preview(lifeGame.newInstance(x, y));
+            gameCanvas.preview(game.newInstance(x, y));
         }
     }
 
     private void lockUIComponents() {
-        tabSeparatorView.setDisable(true);
         tabBenchmark.setDisable(true);
         fieldX.setDisable(true);
         fieldY.setDisable(true);
@@ -599,7 +577,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
     }
 
     private void unlockUIComponents() {
-        tabSeparatorView.setDisable(false);
         tabBenchmark.setDisable(false);
         fieldX.setDisable(false);
         fieldY.setDisable(false);
@@ -615,8 +592,8 @@ public class App extends Application implements GameListener, CanvasEventsListen
     }
 
     private void initGameInstance() {
-        lifeGame = new TheLifeGame();
-        lifeGame.getGameEventsPublisher().subscribeListener(this);
+        game = new TheLifeGame();
+        game.getGameEventsPublisher().subscribeListener(this);
     }
 
     private void initSingleGameCanvas() {
@@ -666,8 +643,8 @@ public class App extends Application implements GameListener, CanvasEventsListen
                     return null;
                 }
             } else {
-                benchFirstGameField = lifeGame.newInstance(firstX, firstY);
-                lifeGame.fillRandom(benchFirstGameField, firstFill);
+                benchFirstGameField = game.newInstance(firstX, firstY);
+                game.fillRandom(benchFirstGameField, firstFill);
             }
             firstGens = Integer.parseInt(fieldFirstGensBench.getText());
             firstThreads = Integer.parseInt(fieldFirstThreadsBench.getText());
@@ -684,8 +661,8 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 return null;
             }
         } else {
-            benchSecondGameField = lifeGame.newInstance(secondX, secondY);
-            lifeGame.fillRandom(benchSecondGameField, secondFill);
+            benchSecondGameField = game.newInstance(secondX, secondY);
+            game.fillRandom(benchSecondGameField, secondFill);
         }
         try {
             secondGens = Integer.parseInt(fieldSecondGensBench.getText());
@@ -722,9 +699,9 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 int x = Integer.parseInt(fieldFirstXBench.getText());
                 int y = Integer.parseInt(fieldFirstYBench.getText());
                 int fill = Integer.parseInt(fieldFirstFillBench.getText());
-                GameField firstGameField = lifeGame.newInstance(x, y);
-                lifeGame.fillRandom(firstGameField, fill);
-                GameField secondGameField = lifeGame.copyFrom(firstGameField);
+                GameField firstGameField = game.newInstance(x, y);
+                game.fillRandom(firstGameField, fill);
+                GameField secondGameField = game.copyFrom(firstGameField);
                 int gens = Integer.parseInt(fieldFirstGensBench.getText());
                 int threadsFirs = Integer.parseInt(fieldFirstThreadsBench.getText());
                 int threadsSecond = Integer.parseInt(fieldSecondThreadsBench.getText());
@@ -739,7 +716,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     }
 
     private ToolBar getBenchBar(GameField firstGameField, GameField secondGameField, int firstGens, int secondGens, int firstThreads, int secondThreads) {
-        double timeSize = 120d;
+        double timeSize = 100;
         Insets smallPadding = new Insets(0, 0, 0, 15);
         Insets mainPadding = new Insets(0, 0, 0, 25d);
         Insets bigPadding = new Insets(0, 0, 0, 50d);
@@ -761,7 +738,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
         fieldFirstInfo.paddingProperty().setValue(mainPadding);
 
         //index 2
-        Label firstResultLabel = new Label("Время: 4911 мс");
+        Label firstResultLabel = new Label();
         firstResultLabel.setPrefWidth(timeSize);
         firstResultLabel.setPadding(mainPadding);
 
@@ -809,7 +786,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
         GameField secondEnd = currentItem.getFieldSecondEnd();
         if (secondEnd == null){
             new Thread(() -> {
-                lifeGame.pastGensWithTimeRecording(currentItem.getFieldSecondStart(), currentItem.getGensSecond(), currentItem.getThreadsSecond());
+                game.pastGensWithTimeRecording(currentItem.getFieldSecondStart(), currentItem.getGensSecond(), currentItem.getThreadsSecond());
             }).start();
 
         } else {
@@ -821,7 +798,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
                         "Всего пар было сравнено: " + (currentBenchItemIndex - 1)).showAndWait();
             } else {
                 new Thread(() -> {
-                    lifeGame.pastGensWithTimeRecording(currentItem.getFieldFirstStart(), currentItem.getGensFirs(), currentItem.getThreadsFirst());
+                    game.pastGensWithTimeRecording(currentItem.getFieldFirstStart(), currentItem.getGensFirs(), currentItem.getThreadsFirst());
                 }).start();
             }
         }
@@ -830,9 +807,9 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private void benchGameStarted(boolean isFirst) {
         int indexShift = isFirst ? 0 : 3;
         currentTotalGens = isFirst ? currentItem.getGensFirs() : currentItem.getGensSecond();
-        ToolBar toolBar = (ToolBar) scrollBox.getChildren().get(currentBenchItemIndex - 1);
-        currentBenchProgressBar = (ProgressBar) toolBar.getItems().get(BENCH_FIRST_PROGRESSBAR + indexShift);
-        currentTimeLabel = (Label) toolBar.getItems().get(BENCH_FIRST_RESULT + indexShift);
+        ToolBar toolBar = (ToolBar) scrollContainer.getChildren().get(currentBenchItemIndex - 1);
+        currentBenchProgressBar = (ProgressBar) toolBar.getItems().get(BENCH_FIRST_PROGRESSBAR_INDEX + indexShift);
+        currentTimeLabel = (Label) toolBar.getItems().get(BENCH_FIRST_RESULT_INDEX + indexShift);
         currentBenchProgressBar.setVisible(true);
         currentTimeLabel.setVisible(true);
         currentTimeLabel.setText("");

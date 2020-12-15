@@ -6,7 +6,6 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
@@ -67,32 +66,6 @@
                </children>
             </AnchorPane>
          </content>
-      </Tab>
-      <Tab fx:id="tabSeparatorView" text="Separator View">
-        <content>
-          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-               <children>
-                  <ToolBar prefHeight="40.0" prefWidth="200.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                    <items>
-                        <Label text="X" />
-                        <TextField fx:id="fieldXSV" prefWidth="70.0" promptText="x" text="10" />
-                        <Label text="Y" />
-                        <TextField fx:id="fieldYSV" prefWidth="70.0" promptText="y" text="10" />
-                        <Label layoutX="126.0" layoutY="17.0" text="Частей" />
-                        <TextField fx:id="fieldPartsSV" layoutX="137.0" layoutY="13.0" prefWidth="70.0" promptText="parts" text="10" />
-                        <Label text="Размер клетки">
-                           <padding>
-                              <Insets left="25.0" />
-                           </padding>
-                        </Label>
-                        <TextField fx:id="fieldCellSizeSV" prefWidth="70.0" promptText="размер" text="25" />
-                        <Slider fx:id="sliderCellSizeSV" max="80.0" min="1.0" value="25.0" />
-                      <Button fx:id="btnShowSV" defaultButton="true" mnemonicParsing="false" text="Показать" />
-                    </items>
-                  </ToolBar>
-               </children>
-            </AnchorPane>
-        </content>
       </Tab>
       <Tab fx:id="tabBenchmark" text="Benchmark">
         <content>
