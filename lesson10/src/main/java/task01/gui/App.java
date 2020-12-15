@@ -57,6 +57,8 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private BenchmarkItem currentItem;
     private ProgressBar currentBenchProgressBar;
     private Label currentTimeLabel;
+    private File firstBenchFile;
+    private File secondBenchFile;
 
     //Tabs
     @FXML
@@ -182,7 +184,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 calculateProgressBar.setProgress((double) currentGen / currentTotalGens);
                 gameCanvas.addToQueue(gameField);
             } else {
-                currentTimeLabel.setText("Поколение: " + currentGen);
+                currentTimeLabel.setText(currentGen + "/" + currentTotalGens);
                 currentBenchProgressBar.setProgress((double) currentGen / currentTotalGens);
             }
         });
@@ -336,6 +338,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private void onClickFirstLoadFromFileBench(ActionEvent event) {
         File file = selectFileToLoad();
         if (file != null) {
+            firstBenchFile = file;
             benchFirstGameField = game.loadFromFile(file);
             if (benchFirstGameField == null) {
                 btnFirstLoadFromFileBench.setText("Файл");
@@ -360,6 +363,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private void onClickSecondLoadFromFileBench(ActionEvent event) {
         File file = selectFileToLoad();
         if (file != null) {
+            secondBenchFile = file;
             benchSecondGameField = game.loadFromFile(file);
             if (benchSecondGameField == null) {
                 btnSecondLoadFromFileBench.setText("Файл");
@@ -652,6 +656,8 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 if (benchFirstGameField == null) {
                     showFileNotSelectedErrorDialog();
                     return null;
+                } else {
+                    benchFirstGameField = game.loadFromFile(firstBenchFile);
                 }
             } else {
                 benchFirstGameField = game.newInstance(firstX, firstY);
@@ -670,6 +676,8 @@ public class App extends Application implements GameListener, CanvasEventsListen
             if (benchSecondGameField == null) {
                 showFileNotSelectedErrorDialog();
                 return null;
+            } else {
+                benchSecondGameField = game.loadFromFile(secondBenchFile);
             }
         } else {
             benchSecondGameField = game.newInstance(secondX, secondY);
@@ -693,6 +701,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 showFileNotSelectedErrorDialog();
                 return null;
             }
+            benchFirstGameField = game.loadFromFile(firstBenchFile);
             benchSecondGameField = benchFirstGameField.copy();
             try {
                 int gens = Integer.parseInt(fieldFirstGensBench.getText());
@@ -757,7 +766,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
         ProgressBar firstProgressBar = new ProgressBar(0.0d);
         firstProgressBar.setPrefWidth(100d);
         firstProgressBar.setPadding(mainPadding);
-        firstProgressBar.setVisible(true);
+        firstProgressBar.setVisible(false);
 
         sb = new StringBuilder();
         sb.append("Размер: ")
@@ -770,7 +779,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
         fieldSecondInfo.paddingProperty().setValue(bigPadding);
 
         //index 5
-        Label secondResultLabel = new Label("Время: 4911 мс");
+        Label secondResultLabel = new Label("");
         secondResultLabel.setPrefWidth(timeSize);
         secondResultLabel.setPadding(mainPadding);
 
@@ -778,7 +787,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
         ProgressBar secondProgressBar = new ProgressBar(0.0d);
         secondProgressBar.setPrefWidth(100d);
         secondProgressBar.setPadding(mainPadding);
-        secondProgressBar.setVisible(true);
+        secondProgressBar.setVisible(false);
 
         //index 7
         Button btnDelete = new Button("Удалить");
