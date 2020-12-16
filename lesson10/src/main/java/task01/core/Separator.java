@@ -4,17 +4,32 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
+/**
+ * Класс инкапсулирующий логику разделения одно поля на множетсво маленьких под-полей, с хранением их координатов
+ * Необходим для запуска игры в многопоточном режиме
+ */
 public class Separator {
     GameField root;
     private int chunks;
     Coordinates[] subFieldsCoordinates;
-    int debugIndex = 0;
 
+    /**
+     * @param root игровое поле подлежащее разделению
+     * @param chunks необходимое количество под-частей игрового поля
+     */
     public Separator(GameField root, int chunks) {
         this.root = root;
         this.chunks = chunks;
         subFieldsCoordinates = new Coordinates[]{new Coordinates(0, root.getX() - 1, 0, root.getY() - 1)};
         subFieldsCoordinates = separate(subFieldsCoordinates);
+    }
+
+    /**
+     * Метод получения готовых координат под-полей
+     * @return координаты суб-полей
+     */
+    public Coordinates[] getSubFieldsCoordinates() {
+        return subFieldsCoordinates;
     }
 
     private Coordinates[] separate(Coordinates[] coordinates) {
@@ -41,10 +56,6 @@ public class Separator {
         return separate(result.toArray(new Coordinates[0]));
     }
 
-    public Coordinates[] getSubFieldsCoordinates() {
-        return subFieldsCoordinates;
-    }
-
     private Coordinates[] separateByX(Coordinates cord) {
         Coordinates[] result = new Coordinates[2];
 
@@ -63,6 +74,9 @@ public class Separator {
         return result;
     }
 
+    /**
+     * Вложенный класс инкапсулирующий о себе сведение об игровом суб-поле
+     */
     public class Coordinates {
         int xFrom;
         int xTo;
@@ -71,6 +85,13 @@ public class Separator {
         int xLength;
         int yLength;
 
+        /**
+         * Создаёт экземпляр класса с указанными координатами
+         * @param xFrom начальная позиция по координате X
+         * @param xTo конечная позиции по координате X
+         * @param yFrom начальная позиция по координате Y
+         * @param yTo конечная позиция по координате Y
+         */
         public Coordinates(int xFrom, int xTo, int yFrom, int yTo) {
             if (xFrom >= xTo) {
                 throw new RuntimeException("Invalid x coordinates from:to " + xFrom + ':' + xTo);
@@ -109,6 +130,10 @@ public class Separator {
             return yLength;
         }
 
+        /**
+         * Метод получения площади суб-поля
+         * @return площадь
+         */
         public int getArea() {
             return xLength * yLength;
         }

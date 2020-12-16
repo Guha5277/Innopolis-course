@@ -2,6 +2,10 @@ package task01.gui;
 
 import task01.core.GameField;
 
+/**
+ * Класс инкапсулирующий в себе промежуточные (или итоговые) результаты сравнения двух игровых полей
+ * Он содержит общую информацию об игровых полях, характеристиках их запуска, текущем состоянии сравнения
+ */
 class BenchmarkItem {
     private boolean isFirstFieldCalculated;
     private boolean isAllFieldsCalculated;
@@ -26,18 +30,32 @@ class BenchmarkItem {
         this.threadsSecond = threadsSecond;
     }
 
+    /**
+     * Метод для определния того, было ли просчитано первое игровое поле
+     * @return состояние первого игрового поля
+     */
     public boolean isFirstFieldCalculated() {
         return isFirstFieldCalculated;
     }
 
+    /**
+     * Метод устанавливающий первое игровое поле как просчитаное
+     */
     public void firstFieldCalculated() {
         isFirstFieldCalculated = true;
     }
 
+    /**
+     * Метод для опредения того, были ли все поля просчитаны
+     * @return состояние всех игровых полей
+     */
     public boolean isAllFieldsCalculated() {
         return isAllFieldsCalculated;
     }
 
+    /**
+     * Метод устанавливающий все игровые поля как просчитаные
+     */
     public void allFieldsCalculated() {
         isAllFieldsCalculated = true;
     }

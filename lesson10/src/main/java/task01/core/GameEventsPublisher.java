@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Класс реализующий паттерн Observer (наблюдатель) выступающий посредником в оповещнии о случившихся игровых процессах
+ */
 public class GameEventsPublisher implements GameListener{
     private boolean isAnyOneFollow;
     private List<GameListener> listeners;
@@ -13,11 +16,19 @@ public class GameEventsPublisher implements GameListener{
         listeners = new ArrayList<>();
     }
 
+    /**
+     * Добавление слушателя игровых событий
+     * @param listener подписываемый слушатель
+     */
     public void subscribeListener(GameListener listener){
         listeners.add(listener);
         isAnyOneFollow = true;
     }
 
+    /**
+     * Удаление слушателя игровых событий
+     * @param listener удаляемый слушатель
+     */
     public void unsubscribeListener(GameListener listener){
         listeners.remove(listener);
         isAnyOneFollow = (!listeners.isEmpty());

@@ -7,6 +7,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 
+/**
+ * Класс реализующий паттерн Прокси (Proxy) в качестве надстройки над классом игрового поля - GameField
+ * Класс расширяет и инкапуслирует часть функционала GameField
+ */
 public class TheLifeGame implements Game {
     private final GameListener listener;
     private GameEventsPublisher gameEventsPublisher;
@@ -16,6 +20,10 @@ public class TheLifeGame implements Game {
         this.listener = gameEventsPublisher;
     }
 
+    /**
+     * Создаёт экземпляр класса с указанным слушателем игровых событий
+     * @param listener слушатель игровых событий
+     */
     public TheLifeGame(GameListener listener) {
         this.listener = listener;
     }
