@@ -13,8 +13,16 @@
         <module>lesson02</module>
         <module>lesson03</module>
         <module>lesson04</module>
-        <module>lesson05</module>
+        <module>lesson10</module>
     </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.7.0</version>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
