@@ -64,4 +64,17 @@ class TheLifeGameTest {
     void wrongInputArgumentsToRunMethod(){
         assertThrows(IllegalArgumentException.class, () -> lifeGame.pastGens(null, -1, -1));
     }
+
+    @Test
+    void timeComparingTest(){
+        lifeGame = new TheLifeGame();
+        GameField first = lifeGame.newInstance(1000, 1000);
+        lifeGame.fillRandom(first, 50);
+        GameField second = lifeGame.copyFrom(first);
+        assertEquals(first, second);
+        long firstGameTime = lifeGame.pastGensWithTimeRecording(first, 100, 1);
+        long secondGameTime = lifeGame.pastGensWithTimeRecording(second, 100, 4);
+        assertTrue(firstGameTime > secondGameTime);
+        assertEquals(first, second);
+    }
 }
