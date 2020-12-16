@@ -97,7 +97,7 @@ public class TheLifeGame implements Game {
         long startTime = System.currentTimeMillis();
         pastGens(gameField, gens, threadsCount);
         listener.gameFinishedTime(gameField.copy(), System.currentTimeMillis() - startTime);
-        return startTime;
+        return System.currentTimeMillis() - startTime;
     }
 
     @Override
