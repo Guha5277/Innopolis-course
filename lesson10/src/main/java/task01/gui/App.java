@@ -4,11 +4,9 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -24,13 +22,11 @@ import task01.core.GameField;
 import task01.core.GameListener;
 import task01.core.TheLifeGame;
 
-import javax.tools.Tool;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -42,7 +38,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
     private final static int BENCH_FIRST_PROGRESSBAR_INDEX = 3;
 
     private boolean isGameRunning;
-    private int benchElementsIndex = 1;
+    private int scrollContainerElementsIndex = 1;
     private int currentBenchItemIndex = 1;
     private int currentTotalGens;
 
@@ -175,6 +171,9 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 isGameRunning = true;
                 lockUIComponents();
             } else {
+                btnStartBench.setDisable(true);
+                tabGame.setDisable(true);
+                btnStop.setDisable(false);
                 currentItem = benchmarkItemMap.get(currentBenchItemIndex);
                 //first from node
                 benchGameStarted(currentItem.getFieldFirstEnd() == null);
@@ -696,7 +695,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
             return null;
         }
 
-        benchmarkItemMap.put(benchElementsIndex, new BenchmarkItem(benchFirstGameField, benchSecondGameField, firstGens, secondGens, firstThreads, secondThreads));
+        benchmarkItemMap.put(scrollContainerElementsIndex, new BenchmarkItem(benchFirstGameField, benchSecondGameField, firstGens, secondGens, firstThreads, secondThreads));
         return getBenchBar(benchFirstGameField, benchSecondGameField, firstGens, secondGens, firstThreads, secondThreads);
     }
 
@@ -713,7 +712,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 int threadsFirs = Integer.parseInt(fieldFirstThreadsBench.getText());
                 int threadsSecond = Integer.parseInt(fieldSecondThreadsBench.getText());
 
-                benchmarkItemMap.put(benchElementsIndex, new BenchmarkItem(benchFirstGameField, benchSecondGameField, gens, gens, threadsFirs, threadsSecond));
+                benchmarkItemMap.put(scrollContainerElementsIndex, new BenchmarkItem(benchFirstGameField, benchSecondGameField, gens, gens, threadsFirs, threadsSecond));
                 return getBenchBar(benchFirstGameField, benchSecondGameField, gens, gens, threadsFirs, threadsSecond);
             } catch (NumberFormatException e) {
                 showNumberFormatErrorDialog(e);
@@ -731,7 +730,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 int threadsFirs = Integer.parseInt(fieldFirstThreadsBench.getText());
                 int threadsSecond = Integer.parseInt(fieldSecondThreadsBench.getText());
 
-                benchmarkItemMap.put(benchElementsIndex, new BenchmarkItem(firstGameField, secondGameField, gens, gens, threadsFirs, threadsSecond));
+                benchmarkItemMap.put(scrollContainerElementsIndex, new BenchmarkItem(firstGameField, secondGameField, gens, gens, threadsFirs, threadsSecond));
                 return getBenchBar(firstGameField, secondGameField, gens, gens, threadsFirs, threadsSecond);
             } catch (NumberFormatException e) {
                 showNumberFormatErrorDialog(e);
@@ -747,7 +746,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
         Insets bigPadding = new Insets(0, 0, 0, 50d);
 
         //index 0
-        Label indexNumber = new Label(String.valueOf(benchElementsIndex));
+        Label indexNumber = new Label(String.valueOf(scrollContainerElementsIndex));
         indexNumber.setFont(Font.font("System", FontWeight.BOLD, 15));
         indexNumber.paddingProperty().setValue(smallPadding);
 
@@ -803,7 +802,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
         btnDelete.setTranslateX(25);
         btnDelete.setOnAction(event -> removeBenchElement(Integer.parseInt(indexNumber.getText())));
 
-        benchElementsIndex++;
+        scrollContainerElementsIndex++;
 
         return new ToolBar(indexNumber, fieldFirstInfo, firstResultLabel, firstProgressBar, fieldSecondInfo, secondResultLabel, secondProgressBar, btnDelete);
     }
@@ -842,7 +841,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 index++;
             }
         }
-        this.benchElementsIndex = benchmarkItemMap.isEmpty() ? 1 : benchmarkItemMap.size() + 1;
+        this.scrollContainerElementsIndex = benchmarkItemMap.isEmpty() ? 1 : benchmarkItemMap.size() + 1;
     }
 
     private void searchAndRunNextGame() {
@@ -856,7 +855,11 @@ public class App extends Application implements GameListener, CanvasEventsListen
             currentBenchItemIndex++;
             currentItem = benchmarkItemMap.get(currentBenchItemIndex);
             if (currentItem == null) {
+                currentBenchItemIndex = 1;
                 showBenchmarkResultDialog();
+                btnStartBench.setDisable(false);
+                tabGame.setDisable(false);
+                btnStop.setDisable(true);
             } else {
                 new Thread(() -> {
                     game.pastGensWithTimeRecording(currentItem.getFieldFirstStart(), currentItem.getGensFirs(), currentItem.getThreadsFirst());
