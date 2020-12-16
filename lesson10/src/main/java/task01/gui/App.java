@@ -174,9 +174,6 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 btnStartBench.setDisable(true);
                 tabGame.setDisable(true);
                 btnStop.setDisable(false);
-                currentItem = benchmarkItemMap.get(currentBenchItemIndex);
-                //first from node
-                benchGameStarted(currentItem.getFieldFirstEnd() == null);
             }
         });
     }
@@ -208,11 +205,14 @@ public class App extends Application implements GameListener, CanvasEventsListen
                 gameCanvas.addToQueue(gameField);
                 gameCanvas.startPainting();
             } else {
-                if (currentItem.getFieldFirstEnd() == null) {
+                if (!currentItem.isFirstFieldCalculated()) {
+                    currentItem.firstFieldCalculated();
                     currentItem.setFieldFirstEnd(gameField);
                 } else {
+                    currentItem.allFieldsCalculated();
                     currentItem.setFieldSecondEnd(gameField);
                 }
+                currentBenchProgressBar.setProgress(2.0);
             }
         });
     }
@@ -421,12 +421,9 @@ public class App extends Application implements GameListener, CanvasEventsListen
 
     @FXML
     private void onClickBtnStartBench(ActionEvent event) {
-        BenchmarkItem firstItem = benchmarkItemMap.get(currentBenchItemIndex);
-        new Thread(() -> {
-            game.pastGensWithTimeRecording(firstItem.getFieldFirstStart(), firstItem.getGensFirs(), firstItem.getThreadsFirst());
-        }).start();
-
-        //TODO лок UI компонентов
+        currentBenchItemIndex = 1;
+        currentItem = benchmarkItemMap.get(currentBenchItemIndex);
+        searchAndRunNextGame();
     }
 
     @FXML
@@ -845,22 +842,24 @@ public class App extends Application implements GameListener, CanvasEventsListen
     }
 
     private void searchAndRunNextGame() {
-        GameField secondEnd = currentItem.getFieldSecondEnd();
-        if (secondEnd == null) {
-            new Thread(() -> {
-                game.pastGensWithTimeRecording(currentItem.getFieldSecondStart(), currentItem.getGensSecond(), currentItem.getThreadsSecond());
-            }).start();
-
-        } else {
+        boolean isAllCalculated = currentItem.isAllFieldsCalculated();
+        if (isAllCalculated) {
             currentBenchItemIndex++;
             currentItem = benchmarkItemMap.get(currentBenchItemIndex);
             if (currentItem == null) {
-                currentBenchItemIndex = 1;
-                showBenchmarkResultDialog();
-                btnStartBench.setDisable(false);
-                tabGame.setDisable(false);
-                btnStop.setDisable(true);
+                benchmarkStopped();
             } else {
+                searchAndRunNextGame();
+            }
+        } else {
+            boolean isFirstCalculated = currentItem.isFirstFieldCalculated();
+            if (isFirstCalculated) {
+                benchGameInitialize(false);
+                new Thread(() -> {
+                    game.pastGensWithTimeRecording(currentItem.getFieldSecondStart(), currentItem.getGensSecond(), currentItem.getThreadsSecond());
+                }).start();
+            } else {
+                benchGameInitialize(true);
                 new Thread(() -> {
                     game.pastGensWithTimeRecording(currentItem.getFieldFirstStart(), currentItem.getGensFirs(), currentItem.getThreadsFirst());
                 }).start();
@@ -868,7 +867,15 @@ public class App extends Application implements GameListener, CanvasEventsListen
         }
     }
 
-    private void benchGameStarted(boolean isFirst) {
+    private void benchmarkStopped() {
+        currentBenchItemIndex = 1;
+        showBenchmarkResultDialog();
+        btnStartBench.setDisable(false);
+        tabGame.setDisable(false);
+        btnStop.setDisable(true);
+    }
+
+    private void benchGameInitialize(boolean isFirst) {
         int indexShift = isFirst ? 0 : 3;
         currentTotalGens = isFirst ? currentItem.getGensFirs() : currentItem.getGensSecond();
         ToolBar toolBar = (ToolBar) scrollContainer.getChildren().get(currentBenchItemIndex - 1);
@@ -878,6 +885,7 @@ public class App extends Application implements GameListener, CanvasEventsListen
         currentTimeLabel.setVisible(true);
         currentTimeLabel.setText("");
     }
+
 
     private void duplicateFieldsBenchValues() {
         fieldSecondXBench.setText(fieldFirstXBench.getText());

@@ -3,7 +3,8 @@ package task01.gui;
 import task01.core.GameField;
 
 class BenchmarkItem {
-    private boolean isFirstRun = true;
+    private boolean isFirstFieldCalculated;
+    private boolean isAllFieldsCalculated;
     private GameField fieldFirstStart;
     private GameField fieldFirstEnd;
     private GameField fieldSecondStart;
@@ -25,12 +26,20 @@ class BenchmarkItem {
         this.threadsSecond = threadsSecond;
     }
 
-    public boolean isFirstRun() {
-        return isFirstRun;
+    public boolean isFirstFieldCalculated() {
+        return isFirstFieldCalculated;
     }
 
-    public void setFirstRun(boolean firstRun) {
-        isFirstRun = firstRun;
+    public void firstFieldCalculated() {
+        isFirstFieldCalculated = true;
+    }
+
+    public boolean isAllFieldsCalculated() {
+        return isAllFieldsCalculated;
+    }
+
+    public void allFieldsCalculated() {
+        isAllFieldsCalculated = true;
     }
 
     public GameField getFieldFirstStart() {
