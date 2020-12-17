@@ -20,7 +20,9 @@ public class MyHashMap<K, V> implements Map<K, V> {
     @Override
     public boolean containsKey(Object key) {
         int index = hash(key);
-        if (table[index] == null) return false;
+        if (table[index] == null) {
+            return false;
+        }
 
         Node<K, V> node = table[index];
         while (node != null) {
@@ -67,7 +69,9 @@ public class MyHashMap<K, V> implements Map<K, V> {
     @Override
     public V get(Object key) {
         int index = hash(key);
-        if (table[index] == null) return null;
+        if (table[index] == null) {
+            return null;
+        }
 
         Node<K, V> node = table[index];
         while (node != null) {
