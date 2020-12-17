@@ -227,7 +227,7 @@ public class MyHashMap<K, V> implements Map<K, V> {
         for (Node<K, V> node : table) {
             if (node != null) {
                 do {
-                    result.add(new Entry<>(node.getKey(), node.getValue()));
+                    result.add(node);
                     node = node.getNextNode();
                 } while (node != null);
             }
@@ -239,7 +239,7 @@ public class MyHashMap<K, V> implements Map<K, V> {
         return (key == null) ? 0 : (key.hashCode() & (CAPACITY - 1));
     }
 
-    private class Node<K, V> {
+    private class Node<K, V> implements Map.Entry<K, V>{
         private Node<K, V> nextNode;
         private K key;
         private V value;
@@ -257,8 +257,10 @@ public class MyHashMap<K, V> implements Map<K, V> {
             return value;
         }
 
-        public void setValue(V value) {
+        public V setValue(V value) {
+            V oldValue = this.value;
             this.value = value;
+            return oldValue;
         }
 
         public Node<K, V> getNextNode() {
@@ -267,33 +269,6 @@ public class MyHashMap<K, V> implements Map<K, V> {
 
         public void setNextNode(Node<K, V> nextNode) {
             this.nextNode = nextNode;
-        }
-    }
-
-    private class Entry<K, V> implements Map.Entry<K, V> {
-        private K key;
-        private V value;
-
-        Entry(K key, V value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        @Override
-        public K getKey() {
-            return key;
-        }
-
-        @Override
-        public V getValue() {
-            return value;
-        }
-
-        @Override
-        public V setValue(V value) {
-            V oldValue = this.value;
-            this.value = value;
-            return oldValue;
         }
     }
 }
