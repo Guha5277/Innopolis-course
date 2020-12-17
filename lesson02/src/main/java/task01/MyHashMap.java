@@ -4,19 +4,11 @@ import java.util.*;
 
 public class MyHashMap<K, V> implements Map<K, V> {
     private final int CAPACITY = 16;
+    private int size;
     private Node<K, V>[] table = new Node[CAPACITY];
 
     @Override
     public int size() {
-        int size = 0;
-        for (Node<K, V> node : table) {
-            if (node != null) {
-                do {
-                    size++;
-                    node = node.getNextNode();
-                } while (node != null);
-            }
-        }
         return size;
     }
 
@@ -101,6 +93,7 @@ public class MyHashMap<K, V> implements Map<K, V> {
         int index = hash(key);
         Node<K, V> oldNode = table[index];
         Node<K, V> newNode = new Node<>(key, value);
+        size++;
 
         if (oldNode == null) {
             table[index] = newNode;
@@ -147,7 +140,10 @@ public class MyHashMap<K, V> implements Map<K, V> {
     @Override
     public V remove(Object key) {
         int index = hash(key);
-        if (table[index] == null) return null;
+        if (table[index] == null) {
+            size--;
+            return null;
+        }
 
         Node<K, V> currentNode = table[index];
         Node<K, V> prevNode = null;
@@ -155,6 +151,7 @@ public class MyHashMap<K, V> implements Map<K, V> {
         while (currentNode != null) {
             K currentKey = currentNode.getKey();
             if (currentKey == null && key == null) {
+                size--;
                 return replaceNode(index, prevNode, currentNode);
             } else if (currentKey == null || key == null) {
                 prevNode = currentNode;
@@ -162,6 +159,7 @@ public class MyHashMap<K, V> implements Map<K, V> {
                 continue;
             }
             if (currentKey.hashCode() == key.hashCode() && currentKey.equals(key)) {
+                size--;
                 return replaceNode(index, prevNode, currentNode);
             }
             prevNode = currentNode;
@@ -178,12 +176,14 @@ public class MyHashMap<K, V> implements Map<K, V> {
                 V value = e.getValue();
                 put(key, value);
             }
+            size += m.size();
         }
     }
 
     @Override
     public void clear() {
         table = new Node[CAPACITY];
+        size = 0;
     }
 
     @Override
