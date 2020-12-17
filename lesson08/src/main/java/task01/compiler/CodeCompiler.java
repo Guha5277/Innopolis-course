@@ -26,6 +26,8 @@ public class CodeCompiler {
     }
 
     private void loadAndRunClass(String bytecodeDest) {
+        File bytecodeFile = new File(bytecodeDest);
+        bytecodeFile.deleteOnExit();
         Class<?> aClass = loadClass(bytecodeDest);
         Constructor<?> constructor = aClass.getConstructors()[0];
         try {

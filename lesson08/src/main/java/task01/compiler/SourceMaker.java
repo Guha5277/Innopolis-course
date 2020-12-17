@@ -1,5 +1,6 @@
 package task01.compiler;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -33,14 +34,16 @@ public class SourceMaker {
         sb.append(NEWLINE).append(TAB).append(BLOCK_END);
         sb.append(NEWLINE).append(BLOCK_END);
 
-        writeSourceToDisk(SOURCE_DIR + SOURCE_FILE_NAME, sb.toString());
+        File sourceFile = new File(SOURCE_DIR + SOURCE_FILE_NAME);
+        writeSourceToDisk(sourceFile, sb.toString());
+        sourceFile.deleteOnExit();
     }
 
-    private void writeSourceToDisk(String filePath, String sourceCode) {
-        try (Writer writer = new FileWriter(filePath)) {
+    private void writeSourceToDisk(File file, String sourceCode) {
+        try (Writer writer = new FileWriter(file)) {
             writer.write(sourceCode.toCharArray());
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write .java file into: " + filePath);
+            throw new RuntimeException("Failed to write .java file into: " + file.getPath());
         }
     }
 }
