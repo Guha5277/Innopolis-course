@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  * Класс обрабатывающий HTTP-запрос клиента
  */
 public class RequestHandler {
-    private final String ROOT_DIR = "lesson09";
+    private final String ROOT_DIR = "";
     private final String FILE_SEPARATOR = System.getProperty("file.separator");
     private File file;
     private HtmlHelper htmlHelper;

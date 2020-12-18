@@ -1,6 +1,6 @@
 package task01;
 
-import java.io.File;
+import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +18,7 @@ public class HtmlHelper {
     private final String OK_MESSAGE = "OK";
     private final String NOT_FOUND_MESSAGE = "Not found";
     private final String HOST_ROOT = "http://localhost/";
+    private final String NOT_FOUND_PAGE = "404.html";
     private final Map<String, String> CONTENT_TYPE = new HashMap<String, String>() {{
         put("html", "text/html");
         put("", "text/plain");
@@ -48,7 +49,8 @@ public class HtmlHelper {
      * @return HTTP-заголовок
      */
     public String getNotFoundPage() {
-        return getHeader(NOT_FOUND, NOT_FOUND_MESSAGE, CONTENT_TYPE.get(""), NOT_FOUND_MESSAGE.length()) + NOT_FOUND_MESSAGE;
+        String body = getBody(NOT_FOUND_PAGE);
+        return getHeader(NOT_FOUND, NOT_FOUND_MESSAGE, CONTENT_TYPE.get("html"), body.length()) + getBody(NOT_FOUND_PAGE);
     }
 
     /**
@@ -134,5 +136,20 @@ public class HtmlHelper {
                 "<title>%s</title>" +
                 "<body>", title);
         return header + content + "</body></html>";
+    }
+
+    private String getBody (String pathToPage){
+        File file = new File(pathToPage);
+        try {
+            Reader reader = new FileReader(file);
+            char[] buf = new char[(int) file.length()];
+            reader.read(buf, 0, (int) file.length());
+            return new String(buf);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
