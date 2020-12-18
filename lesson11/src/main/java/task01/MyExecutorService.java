@@ -10,6 +10,7 @@ public class MyExecutorService implements Executor {
 
     /**
      * Создаёт сервси с заданным количеством потоков исполнения
+     *
      * @param threadsCount количество потоков
      */
     public MyExecutorService(int threadsCount) {
@@ -21,6 +22,7 @@ public class MyExecutorService implements Executor {
 
     /**
      * Добавляет задачу в очередь на выполнение
+     *
      * @param command выполняемая задача
      */
     public void execute(Runnable command) {
@@ -32,7 +34,7 @@ public class MyExecutorService implements Executor {
     /**
      * Завершает работу сервиса
      */
-    public void shutdown(){
+    public void shutdown() {
         isInterrupted = true;
     }
 
@@ -44,7 +46,11 @@ public class MyExecutorService implements Executor {
             while (!isInterrupted) {
                 Runnable task = tasksQueue.poll();
                 if (task != null) {
-                    task.run();
+                    try {
+                        task.run();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
