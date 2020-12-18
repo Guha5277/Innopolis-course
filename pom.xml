@@ -21,6 +21,14 @@
         <module>lesson11</module>
     </modules>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.7.0</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>
