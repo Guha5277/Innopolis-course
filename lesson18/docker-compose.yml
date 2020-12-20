@@ -1,0 +1,9 @@
+services:
+
+  http_server:
+    build: .
+    ports:
+      - 80:80
+    volumes:
+      - ./404.html:/404.html
+    container_name: http_serv_container
